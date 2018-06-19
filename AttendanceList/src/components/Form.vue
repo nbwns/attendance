@@ -27,6 +27,10 @@
           <label for="time">Heure</label>
           <input type="time" class="form-control" id="time" v-model="notification.time">
         </div>
+         <div class="form-group">
+          <label for="files">Pièces justificatives</label>
+           <input type="file" id="files" ref="files" multiple v-on:change="handleFileUploads()"/>
+        </div>
         <div class="form-group">
           <label for="comment">Commentaire</label>
           <textarea class="form-control" id="comment" v-model="notification.comment"></textarea>
@@ -38,6 +42,7 @@
 </template>
 
 <script>
+import axios from 'axios'
 export default {
   name: 'Form',
   data () {
@@ -48,7 +53,8 @@ export default {
         date: this.$moment().format('YYYY-MM-DD'),
         time: this.$moment().format('HH:mm'),
         comment: null,
-        type: 'allDay'
+        type: 'allDay',
+        files: ''
       },
       trainings: [
         {id: 1, name: 'Développeur .NET'},
@@ -62,9 +68,39 @@ export default {
     }
   },
   methods: {
+    handleFilesUpload () {
+      this.notification.files = this.$refs.files.files
+    },
     submit () {
-      let {training, student, date, time, comment, type } = this.notification;
-      console.log(training, student, date, time, comment, type);
+      this.notification.files = this.$refs.files.files
+      let {training, student, date, time, comment, type} = this.notification
+      let formData = new FormData()
+      formData.append('training', training)
+      formData.append('student', student)
+      formData.append('date', date)
+      formData.append('time', time)
+      formData.append('comment', comment)
+      formData.append('type', type)
+      for (var i = 0; i < this.notification.files.length; i++ ){
+        let file = this.notification.files[i]
+        formData.append('files', file)
+      }
+      for(var pair of formData.entries()) {
+        console.log(pair[0]+ ', '+ pair[1]); 
+      }
+      axios.post('http://localhost:8082/nonattendance',
+                  formData,
+                  {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                  })
+            .then(function(){
+              console.log('SUCCESS!!')
+            })
+            .catch(function(){
+              console.log('FAILURE!!')
+            })
     }
   }
 }
