@@ -5,7 +5,15 @@ let bodyParser = require('body-parser');
 let cors = require('cors');
 let mongoose = require('mongoose');
 let multer  = require('multer')
-let upload = multer({ dest: 'uploads/' })
+var storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'uploads/')
+    },
+    filename: function (req, file, cb) {
+      cb(null, req.body.student+'-'+req.body.date+'-'+file.originalname)
+    }
+  })
+let upload = multer({ storage: storage })
 let nonAttendance = require('./controllers/routes/nonAttendance.js');
 
 mongoose.connect('mongodb://localhost:27017/attendancelist');

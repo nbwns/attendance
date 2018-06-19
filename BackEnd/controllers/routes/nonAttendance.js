@@ -9,6 +9,7 @@ function post(req, res){
 
     let {training, type, comment, student, date, time} = req.body;
     let newNonAttendance = { training, type, comment, student};
+    newNonAttendance.files = [req.file.path];
     if(!date){
         throw new Error("Date is required");
     }
@@ -27,17 +28,17 @@ function post(req, res){
         }
 
         newNonAttendance = new NonAttendance(newNonAttendance);
-        res.json({message: "Successfully added!", newNonAttendance });
+        //res.json({message: "Successfully added!", newNonAttendance });
 
 
-        /*newNonAttendance.save((err,book) => {
+        newNonAttendance.save((err,book) => {
             if(err) {
                 res.send(err);
             }
             else { //If no errors, send it back to the client
                 res.json({message: "Successfully added!", newNonAttendance });
             }
-        });*/
+        });
     }
 }
 

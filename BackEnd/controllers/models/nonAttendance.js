@@ -7,6 +7,7 @@ let NonAttendanceSchema = new Schema({
     date : { type: Date, required: true },
     type : { type: String, required: true },
     comment : { type: String, required: false },
+    files:[{type: String}],
     createdAt: { type: Date, default: Date.now }
 }, 
 { 
