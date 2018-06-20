@@ -2,6 +2,12 @@
   <div class="row">
     <div class="col text-left">
       <h1>Justifier une absence</h1>
+      <div class="alert alert-warning" role="alert" v-if="validationError">
+        Veuillez vérifier les données du formulaire.
+      </div>
+      <div class="alert alert-danger" role="alert"  v-if="serverError">
+        Une erreur est survenue. Veuillez réessayer plus tard.
+      </div>
       <form @submit="submit">
         <div class="form-group">
           <label for="training-list">Formation</label>
@@ -48,11 +54,11 @@ export default {
   data () {
     return {
       notification: {
-        training: null,
-        student: null,
+        training: '',
+        student: '',
         date: this.$moment().format('YYYY-MM-DD'),
         time: this.$moment().format('HH:mm'),
-        comment: null,
+        comment: '',
         type: 'allDay',
         files: ''
       },
@@ -60,6 +66,8 @@ export default {
         {id: 1, name: 'Développeur .NET'},
         {id: 2, name: 'Développeur d\'applications mobiles'}
       ],
+      validationError: false,
+      serverError: false,
       types: [
         {id: 'allDay', name: 'Jour complet', time: false},
         {id: 'lateArrival', name: 'Arrivée tardive', time: true},
@@ -86,8 +94,10 @@ export default {
         formData.append('files', file)
       }
       for(var pair of formData.entries()) {
-        console.log(pair[0]+ ', '+ pair[1]); 
+        console.log(pair[0]+ ', '+ pair[1]);
       }
+      this.serverError = false
+      this.validationError = false
       axios.post('http://localhost:8082/nonattendance',
                   formData,
                   {
@@ -98,8 +108,14 @@ export default {
             .then(function(){
               console.log('SUCCESS!!')
             })
-            .catch(function(){
-              console.log('FAILURE!!')
+            .catch((error) => {
+              console.log(error.response.status)
+              if(error.response.status >= 500){
+                this.serverError = true
+              }
+              else{
+                this.validationError = true
+              }
             })
     }
   }
@@ -121,5 +137,11 @@ li {
 }
 a {
   color: #42b983;
+}
+div.alert{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
 }
 </style>
