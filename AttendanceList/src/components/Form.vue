@@ -1,5 +1,8 @@
 <template>
   <div class="row">
+    <div class="overlay" v-if="sending">
+      <div class="loader">Envoi...</div>
+    </div>
     <div class="col text-left">
       <h1>Justifier une absence</h1>
       <div class="alert alert-warning" role="alert" v-if="validationError">
@@ -8,20 +11,23 @@
       <div class="alert alert-danger" role="alert"  v-if="serverError">
         Une erreur est survenue. Veuillez réessayer plus tard.
       </div>
-      <form @submit="submit">
+      <form @submit.prevent="validateBeforeSubmit">
         <div class="form-group">
           <label for="training-list">Formation</label>
-          <select id="training-list" class="form-control" v-model="notification.training" >
+          <select name="training" id="training-list" v-validate="'required'" :class="{'form-control': true, 'is-invalid': errors.has('training') }" v-model="notification.training" >
             <option v-for="t in trainings" :value="t.id" v-bind:key="t.name">{{t.name}}</option>
           </select>
+          <div v-show="errors.has('training')" class="invalid-feedback">{{ errors.first('training') }}</div>
         </div>
         <div class="form-group">
           <label for="student-id">Identifiant stagiaire</label>
-          <input type="text" class="form-control" id="student-id" v-model="notification.student" placeholder="STG0000">
+          <input type="text" name="student" v-validate="'required|alpha_num'" :class="{'form-control': true, 'is-invalid': errors.has('student') }" id="student-id" v-model="notification.student" placeholder="STG0000">
+          <div v-show="errors.has('student')" class="invalid-feedback">{{ errors.first('student') }}</div>
         </div>
         <div class="form-group">
           <label for="date">Date</label>
-          <input type="date" class="form-control" id="date" v-model="notification.date" >
+          <input type="date" name="date" v-validate="'required'" :class="{'form-control': true, 'is-invalid': errors.has('date') }" id="date" v-model="notification.date" >
+          <div v-show="errors.has('date')" class="invalid-feedback">{{ errors.first('date') }}</div>
         </div>
         <div class="form-group">
           <label for="non-attendance-type">Type d'absence</label>
@@ -31,11 +37,12 @@
         </div>
         <div class="form-group" v-if="notification.type !== 'allDay'">
           <label for="time">Heure</label>
-          <input type="time" class="form-control" id="time" v-model="notification.time">
+          <input type="time" name="time" :class="{'form-control': true, 'is-invalid': errors.has('time') }" v-validate ="{ rules: { required: this.notification.type !== 'allDay'} }" id="time" v-model="notification.time">
+          <div v-show="errors.has('time')" class="invalid-feedback">{{ errors.first('time') }}</div>
         </div>
          <div class="form-group">
           <label for="files">Pièces justificatives</label>
-           <input type="file" id="files" ref="files" multiple v-on:change="handleFileUploads()"/>
+           <input type="file" id="files" ref="files" multiple/>
         </div>
         <div class="form-group">
           <label for="comment">Commentaire</label>
@@ -49,6 +56,29 @@
 
 <script>
 import axios from 'axios'
+import { Validator } from 'vee-validate';
+
+const dictionary = {
+  custom: {
+    training: {
+      required: 'Veuillez choisir votre formation'
+    },
+    student: {
+      required: 'Veuillez entrer votre identifiant stagiaire',
+      alpha_num: 'Votre identifiant stagiaire doit commencer par STG suivi de 4 chiffres',
+    },
+    date: {
+      required: 'Veuillez choisir la date de l\'absence'
+    },
+    time: {
+      required: 'Veuillez choisir l\'heure de l\'absence'
+    }
+  }
+};
+
+// Override and merge the dictionaries
+Validator.localize('en',dictionary);
+
 export default {
   name: 'Form',
   data () {
@@ -68,6 +98,7 @@ export default {
       ],
       validationError: false,
       serverError: false,
+      sending: false,
       types: [
         {id: 'allDay', name: 'Jour complet', time: false},
         {id: 'lateArrival', name: 'Arrivée tardive', time: true},
@@ -76,8 +107,16 @@ export default {
     }
   },
   methods: {
-    handleFilesUpload () {
-      this.notification.files = this.$refs.files.files
+    validateBeforeSubmit() {
+      this.$validator.validateAll().then((result) => {
+         console.log(result)
+        
+        if (result) {
+          this.submit()
+        }
+
+        console.log('errors')
+      });
     },
     submit () {
       this.notification.files = this.$refs.files.files
@@ -98,6 +137,7 @@ export default {
       }
       this.serverError = false
       this.validationError = false
+      this.sending = true
       axios.post('http://localhost:8082/nonattendance',
                   formData,
                   {
@@ -105,10 +145,12 @@ export default {
                         'Content-Type': 'multipart/form-data'
                     }
                   })
-            .then(function(){
+            .then(() => {
               console.log('SUCCESS!!')
+              setInterval(() => this.sending = false, 1000)
             })
             .catch((error) => {
+              this.sending = false
               console.log(error.response.status)
               if(error.response.status >= 500){
                 this.serverError = true
@@ -143,5 +185,22 @@ div.alert{
   top: 0;
   left: 0;
   width: 100%;
+}
+div.overlay{
+  position: fixed;
+  top: 0; 
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height:100;
+  background-color: #CCCCCC;
+  opacity: 0.5;
+  z-index:2;
+}
+div.overlay .loader{
+  position: absolute;
+  top: 50%;
+  left: 40%;
 }
 </style>
