@@ -1,7 +1,10 @@
 <template>
   <div class="row">
     <div class="overlay" v-if="sending">
-      <div class="loader">Envoi...</div>
+      <div class="loader">
+         <img src="../assets/loader.gif"><br/>
+          <strong>Envoi...</strong>
+      </div>
     </div>
     <div class="col text-left">
       <h1>Justifier une absence</h1>
@@ -146,8 +149,10 @@ export default {
                     }
                   })
             .then(() => {
-              console.log('SUCCESS!!')
-              setInterval(() => this.sending = false, 1000)
+              setTimeout(() => {
+                this.sending = false
+                this.$router.push('/ok')
+              }, 1000)
             })
             .catch((error) => {
               this.sending = false
@@ -194,8 +199,7 @@ div.overlay{
   bottom: 0;
   width: 100%;
   height:100;
-  background-color: #CCCCCC;
-  opacity: 0.5;
+  background-color: rgba(204, 204, 204, 0.3);
   z-index:2;
 }
 div.overlay .loader{
