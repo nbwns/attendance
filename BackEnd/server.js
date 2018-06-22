@@ -1,12 +1,12 @@
-let port = 8082;
-let express = require('express');
-let app = express();
+require('dotenv').config()
+const express = require('express');
+const app = express();
 const { check } = require('express-validator/check');
-let boom = require('express-boom');
-let bodyParser = require('body-parser');
-let cors = require('cors');
-let mongoose = require('mongoose');
-let multer  = require('multer')
+const boom = require('express-boom');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const mongoose = require('mongoose');
+const multer  = require('multer')
 let storage = multer.diskStorage({
     destination: function (req, file, cb) {
       cb(null, 'uploads/')
@@ -18,12 +18,11 @@ let storage = multer.diskStorage({
 let upload = multer({ storage: storage })
 let nonAttendance = require('./controllers/routes/nonAttendance.js');
 
-mongoose.connect('mongodb://localhost:27017/attendancelist');
+mongoose.connect(`mongodb://${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`);
 
 let db = mongoose.connection;
 
 db.on('error', console.error.bind(console, 'connection error:'))
-
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
@@ -32,7 +31,7 @@ app.use(bodyParser.json({type: 'application/json'}));
 app.use(cors());
 app.use(boom());
 
-app.get('/', (req, res) => res.json({message: "OK"}));
+app.get('/', nonAttendance.requestInternalApi);
 
 app.post('/nonattendance', 
     upload.single('files'), [
@@ -42,5 +41,5 @@ app.post('/nonattendance',
         check('time').not().isEmpty()],
     nonAttendance.post);
 
-app.listen(port);
-console.log("Listening on port " + port);
+app.listen(process.env.APP_PORT);
+console.log("Listening on port " + process.env.APP_PORT);
